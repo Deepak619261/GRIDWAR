@@ -21,13 +21,13 @@ import { CellComponent } from './cell.component';
   styles: [`
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(50, 1fr);
-      gap: 1px;
+      grid-template-columns: repeat(50, 14px);
+      grid-template-rows: repeat(50, 14px);
+      gap: 2px;
       background: #1a1a2e;
       padding: 8px;
       border-radius: 4px;
-      width: 100%;
-      max-width: 800px;
+      flex-shrink: 0;
     }
   `]
 })

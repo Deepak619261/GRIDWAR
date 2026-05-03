@@ -52,12 +52,12 @@ public class GridService
         _users.TryGetValue(connectionId, out user);
     public int OnlineCount => _users.Count;
 
-    public (string Name, string Color, int CellCount)[] GetLeaderboard() =>
+    public LeaderboardEntry[] GetLeaderboard() =>
         _grid.Values
             .Where(c => c.OwnerId != null)
             .GroupBy(c => new { c.OwnerId, c.OwnerName, c.OwnerColor })
-            .Select(g => (g.Key.OwnerName ?? "?", g.Key.OwnerColor ?? "#fff", g.Count()))
-            .OrderByDescending(x => x.Item3)
+            .Select(g => new LeaderboardEntry(g.Key.OwnerName ?? "?", g.Key.OwnerColor ?? "#fff", g.Count()))
+            .OrderByDescending(x => x.CellCount)
             .Take(5)
             .ToArray();
 }

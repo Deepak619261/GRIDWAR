@@ -15,7 +15,7 @@ export interface UserInfo {
 }
 
 export interface LeaderboardEntry {
-  item1: string; // name
-  item2: string; // color
-  item3: number; // cellCount
+  name: string;
+  color: string;
+  cellCount: number;
 }

@@ -17,19 +17,20 @@ import { CellState } from '../models/grid.models';
   `,
   styles: [`
     .cell {
-      aspect-ratio: 1;
+      width: 14px;
+      height: 14px;
       cursor: pointer;
-      border-radius: 1px;
-      transition: background-color 0.15s ease, transform 0.1s ease;
+      border-radius: 2px;
+      transition: transform 0.08s ease, filter 0.08s ease;
     }
     .cell:hover {
-      filter: brightness(1.3);
-      transform: scale(1.15);
+      filter: brightness(1.4);
+      transform: scale(1.2);
       z-index: 1;
       position: relative;
     }
     .cell.mine {
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.6);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
     }
   `]
 })

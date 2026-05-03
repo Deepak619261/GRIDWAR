@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { GridService } from './services/grid.service';
 import { GridComponent } from './components/grid.component';
 
@@ -28,11 +28,11 @@ import { GridComponent } from './components/grid.component';
         <aside class="sidebar">
           <div class="leaderboard">
             <h3>Leaderboard</h3>
-            @for (entry of gridService.leaderboard(); track entry.item1) {
+            @for (entry of gridService.leaderboard(); track entry.name) {
               <div class="lb-row">
-                <span class="lb-dot" [style.background]="entry.item2"></span>
-                <span class="lb-name">{{ entry.item1 }}</span>
-                <span class="lb-count">{{ entry.item3 }}</span>
+                <span class="lb-dot" [style.background]="entry.color"></span>
+                <span class="lb-name">{{ entry.name }}</span>
+                <span class="lb-count">{{ entry.cellCount }}</span>
               </div>
             }
             @if (gridService.leaderboard().length === 0) {
@@ -114,6 +114,7 @@ import { GridComponent } from './components/grid.component';
       padding: 24px;
       align-items: flex-start;
       justify-content: center;
+      overflow-x: auto;
     }
 
     .sidebar {
@@ -184,13 +185,13 @@ import { GridComponent } from './components/grid.component';
 export class App implements OnInit {
   readonly gridService = inject(GridService);
 
-  async ngOnInit() {
-    await this.gridService.start();
-  }
-
-  myCellCount(): number {
+  readonly myCellCount = computed(() => {
     const me = this.gridService.myUser();
     if (!me) return 0;
     return this.gridService.grid().filter(c => c.ownerId === me.userId).length;
+  });
+
+  async ngOnInit() {
+    await this.gridService.start();
   }
 }

@@ -9,6 +9,9 @@ export class GridService {
   readonly onlineCount = signal<number>(0);
   readonly leaderboard = signal<LeaderboardEntry[]>([]);
 
+  // tracks pre-optimistic state so we can revert on rejection
+  private readonly _preOptimistic = new Map<number, CellState>();
+
   constructor(private signalr: SignalrService) {
     const conn = signalr.connection;
 
@@ -18,6 +21,7 @@ export class GridService {
     });
 
     conn.on('CellCaptured', (cell: CellState) => {
+      this._preOptimistic.delete(cell.index);
       this.grid.update(g => {
         const next = [...g];
         next[cell.index] = cell;
@@ -26,21 +30,21 @@ export class GridService {
     });
 
     conn.on('CaptureRejected', ({ index, reason }: { index: number; reason: string }) => {
-      // revert optimistic update
-      this.grid.update(g => {
-        const next = [...g];
-        // snapshot will re-sync on next event; mark as null owner to show rejection
-        return next;
-      });
+      const prior = this._preOptimistic.get(index);
+      if (prior) {
+        this.grid.update(g => {
+          const next = [...g];
+          next[index] = prior;
+          return next;
+        });
+        this._preOptimistic.delete(index);
+      }
       console.warn(`[CaptureRejected] cell ${index}: ${reason}`);
     });
 
     conn.on('OnlineCount', (n: number) => this.onlineCount.set(n));
-
     conn.on('Leaderboard', (entries: LeaderboardEntry[]) => this.leaderboard.set(entries));
-
     conn.on('Snapshot', (snapshot: CellState[]) => this.grid.set(snapshot));
-
     conn.onreconnected(() => conn.invoke('GetSnapshot'));
   }
 
@@ -48,10 +52,12 @@ export class GridService {
     const me = this.myUser();
     if (!me) return;
 
-    // optimistic update
+    const current = this.grid()[index];
+    this._preOptimistic.set(index, current);
+
     this.grid.update(g => {
       const next = [...g];
-      next[index] = { ...next[index], ownerId: me.userId, ownerColor: me.color, ownerName: me.displayName };
+      next[index] = { ...current, ownerId: me.userId, ownerColor: me.color, ownerName: me.displayName };
       return next;
     });
 
