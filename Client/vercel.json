@@ -1,5 +1,5 @@
 {
-  "buildCommand": "sed -i \"s|REPLACE_HUB_URL|$HUB_URL|g\" src/index.html && npm run build",
+  "buildCommand": "node scripts/inject-config.mjs && npm run build",
   "outputDirectory": "dist/Client/browser",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
