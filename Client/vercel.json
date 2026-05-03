@@ -1,5 +1,4 @@
 {
-  "buildCommand": "node scripts/inject-config.mjs && npm run build",
   "outputDirectory": "dist/Client/browser",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

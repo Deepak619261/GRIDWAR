@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
-
-const HUB_URL = (window as any).__HUB_URL__ ?? 'http://localhost:5000/hubs/grid';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SignalrService {
   readonly connection = new signalR.HubConnectionBuilder()
-    .withUrl(HUB_URL)
+    .withUrl(environment.hubUrl)
     .withAutomaticReconnect()
     .build();
 
