@@ -1,0 +1,17 @@
+# .NET build output
+Server/bin/
+Server/obj/
+
+# Angular build output & cache
+Client/dist/
+Client/.angular/
+Client/node_modules/
+
+# IDE
+.vscode/
+.vs/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db

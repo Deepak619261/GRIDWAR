@@ -3,26 +3,26 @@ using Microsoft.AspNetCore.SignalR;
 public class GridHub : Hub
 {
     private static readonly string[] Colors = {
-        "#e74c3c","#e67e22","#f1c40f","#2ecc71",
-        "#1abc9c","#3498db","#9b59b6","#e91e63"
+        "#FF4757","#FF6348","#FFA502","#2ED573",
+        "#1E90FF","#7B68EE","#FF6B81","#00D2D3",
+        "#ECCC68","#A29BFE","#26de81","#fd9644"
     };
     private static readonly string[] Adjectives = { "Fast", "Bold", "Keen", "Sharp", "Swift" };
     private static readonly string[] Nouns = { "Falcon", "Wolf", "Hawk", "Bear", "Fox" };
     private static readonly Random Rng = new();
 
     private readonly GridService _grid;
-
     public GridHub(GridService grid) => _grid = grid;
 
     public override async Task OnConnectedAsync()
     {
-        var color = Colors[Rng.Next(Colors.Length)];
-        var name = $"{Adjectives[Rng.Next(Adjectives.Length)]}{Nouns[Rng.Next(Nouns.Length)]}{Rng.Next(10, 99)}";
+        var color  = Colors[Rng.Next(Colors.Length)];
+        var name   = $"{Adjectives[Rng.Next(Adjectives.Length)]}{Nouns[Rng.Next(Nouns.Length)]}{Rng.Next(10, 99)}";
         var userId = Guid.NewGuid().ToString("N")[..8];
-        var user = new UserInfo(Context.ConnectionId, userId, name, color);
+        var user   = new UserInfo(Context.ConnectionId, userId, name, color);
         _grid.AddUser(user);
 
-        await Clients.Caller.SendAsync("Connected", user, _grid.GetSnapshot());
+        await Clients.Caller.SendAsync("Connected", user, _grid.GetSnapshot(), _grid.GetRecentActivity());
         await Clients.All.SendAsync("OnlineCount", _grid.OnlineCount);
         await base.OnConnectedAsync();
     }
@@ -45,6 +45,7 @@ public class GridHub : Hub
         {
             await Clients.All.SendAsync("CellCaptured", newState);
             await Clients.All.SendAsync("Leaderboard", _grid.GetLeaderboard());
+            await Clients.All.SendAsync("Activity", _grid.GetRecentActivity());
         }
         else
         {
@@ -55,5 +56,14 @@ public class GridHub : Hub
     public async Task GetSnapshot()
     {
         await Clients.Caller.SendAsync("Snapshot", _grid.GetSnapshot());
+        await Clients.Caller.SendAsync("Activity", _grid.GetRecentActivity());
+    }
+
+    public async Task ResetGrid()
+    {
+        _grid.Reset();
+        await Clients.All.SendAsync("GridReset", _grid.GetSnapshot());
+        await Clients.All.SendAsync("Leaderboard", _grid.GetLeaderboard());
+        await Clients.All.SendAsync("Activity", _grid.GetRecentActivity());
     }
 }

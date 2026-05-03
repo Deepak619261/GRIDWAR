@@ -19,3 +19,10 @@ export interface LeaderboardEntry {
   color: string;
   cellCount: number;
 }
+
+export interface ActivityEvent {
+  playerName: string;
+  color: string;
+  cellIndex: number;
+  at: string;
+}

@@ -243,10 +243,11 @@ We had four options. Database options (Postgres, MongoDB) are eliminated immedia
 
 **My choice and defense (3–5 sentences in my own words):**
 
-> so we had the three option for the conflict resolution on simaltaneous clicks , 
-1. last write wins -> in this whatever executed last at cpu wins , its so random that it doesn't gurranty the updation will be correct or not , another thing is that say two request by conicidence arrived at the same nanoseconds the memory get corrupeted , means it will have some part updated from the req A and some from req B 
-2. passimistic lock : - it means whenever two requests came at the same time , we put a lock there and see who entered the first first entered alright then the second will get the someone captured already msg , the main cons of this is the thread locking stops the whole system and makes the system stopes. the read can happen while the write lock is locked , but the main issue is that threads pile ups 
-3. CAS comapre and swap -> means while making the actual request we take the current value of the cell and if that is the same while the actaul request we keep else we just send the cell got captured 
+We had three options. Last-write-wins is rejected immediately — whatever executes last at the CPU wins, which is random. The real problem is that one user's write silently overwrites another's with no feedback; both users briefly believe they won, but only one did. That is a silent correctness problem — in C# with `ConcurrentDictionary`, thread safety is handled internally so there is no byte-level corruption like in C/C++, but the state is still wrong.
+
+Pessimistic lock works like a bathroom key — every request tries to acquire the lock, the first one in captures the cell if it is empty and releases the lock, then the rest come in one by one and see it is already taken. The problem is that waiting threads are frozen but still checked out from the thread pool — they occupy slots while doing no work, which is resource waste under high load.
+
+CAS — Compare-And-Swap — is the correct choice. We read the current cell value, then call `ConcurrentDictionary.TryUpdate(key, newValue, expectedCurrentValue)`, which only writes if the current value still matches what we read. If it does, we win. If not, `TryUpdate` returns `false` immediately — no waiting — and we send `CaptureRejected` back to the caller. No retry, because the cell is already owned by someone else.
 **Node/Socket.io mapping:** Node's event loop serializes synchronous code. If `captureCell` handler reads the map, checks, and writes with no `await` in between, races cannot happen within one process. For multi-process Node, use Redis `SET key NX PX milliseconds` (set-if-not-exists with TTL) or Lua scripts for atomic CAS. The concept is identical — only the primitive differs.
 
 ---
@@ -277,7 +278,7 @@ We had four options. Database options (Postgres, MongoDB) are eliminated immedia
 
 **My choice and defense (3–5 sentences in my own words):**
 
-> *(Write your choice and reasoning here. Do not paste AI text. This must be yours.)*
+We had three options. Option B — a separate REST endpoint — is rejected because of the timing gap: the client calls `GET /api/grid`, gets a snapshot, then connects to the WebSocket hub. During that window, another user could capture a cell. The server fires `CellCaptured` but the WebSocket is not connected yet — that event is missed and the snapshot is silently stale. Option C — lazy/chunked loading — is rejected because it is designed for content that requires scrolling, but the entire 2500-cell grid fits on one page in a single message; adding viewport tracking and chunk request logic is complexity with zero benefit at this size. Option A wins: the snapshot is pushed inside `OnConnectedAsync` — the moment the connection is established, the client receives the current state over the same WebSocket already open. No timing gap, no missed events, no second protocol.
 
 **Node/Socket.io mapping:** `socket.on('connect', () => socket.emit('getSnapshot'))` or push from the server in `io.on('connection', socket => { socket.emit('snapshot', gridState); })`. Identical pattern.
 
@@ -309,7 +310,7 @@ We had four options. Database options (Postgres, MongoDB) are eliminated immedia
 
 **My choice and defense (3–5 sentences in my own words):**
 
-> *(Write your choice and reasoning here. Do not paste AI text. This must be yours.)*
+We chose anonymous session identity. Full auth — Option C — is rejected immediately: registration, password hashing, JWT issuance, and token refresh alone would take 3–5 days, consuming the entire assignment budget before a single grid cell is built. Cookie-based persistent identity — Option B — would let a user keep their color and score across page refreshes, but the assignment spec says nothing about score persistence; adding a session store for a feature no one asked for is complexity with no defined benefit. Option A wins: the server assigns a random color and display name the moment the WebSocket connects — zero friction, nothing to register, nothing to store between sessions. Identity lives for the lifetime of that connection, which is exactly what this assignment needs.
 
 **Node/Socket.io mapping:** in Node, assign identity in the `connection` event handler: `const userId = generateId(); const color = pickColor(); socket.data.userId = userId;`. The concept is identical — connection-scoped server-assigned identity.
 
