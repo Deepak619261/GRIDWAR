@@ -1,11 +1,26 @@
 # .NET build output
 Server/bin/
 Server/obj/
+Server/publish/
+Server/publish.zip
 
 # Angular build output & cache
 Client/dist/
 Client/.angular/
 Client/node_modules/
+
+# Root node_modules (playwright etc)
+node_modules/
+package-lock.json
+
+# Playwright
+test-results/
+playwright-report/
+.playwright-mcp/
+
+# Vercel
+.vercel/
+Client/.vercel/
 
 # IDE
 .vscode/
